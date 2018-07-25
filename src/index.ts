@@ -97,7 +97,9 @@ export function vesper(schema: any, options?: object) {
     };
 
     return (req: Request, res: Response, next: NextFunction) => {
-        const container = Container.of(req);
+        req.id = Math.random().toString(36).substring(7);
+      
+        const container = Container.of(req.id);
         container.set(CurrentRequest, req);
         container.set(CurrentResponse, res);
         allOptions.context.container = container;
@@ -130,9 +132,6 @@ export function vesper(schema: any, options?: object) {
             res.write(gqlResponse);
             res.end();
 
-            // request has finished - reset container
-            Container.reset(req);
-
         }).catch((error: HttpQueryError) => {
 
             // rollback transaction
@@ -163,9 +162,12 @@ export function vesper(schema: any, options?: object) {
             res.statusCode = error.statusCode;
             res.write(error.message);
             res.end();
+        }).finally(() => {
 
             // request has finished - reset container
-            Container.reset(req);
-        });
+            setTimeout(() => {       
+                typedi_1.Container.reset(req.id);
+            }, 2000);
+        })
     };
 }
